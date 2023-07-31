@@ -1,0 +1,43 @@
+GAL16V8
+ALU
+
+F0 F1 F2 F3 F4 F5 F6 F7 E0 GND
+E1 SU NO ZO S3 S2 S1 S0 MS VCC
+
+MS = E0 + E1
+
+S0 = /SU * /E0 * /E1
+   + /SU * /E0 *  E1
+
+S1 = SU + E0 + E1
+
+S2 = SU + E0
+
+S3 = /SU + /E0 + /E1
+
+NO = F7
+
+ZO = /F0 * /F1 * /F2 * /F3 * /F4 * /F5 * /F6 * /F7
+
+DESCRIPTION
+S0 | S1 | S2 | S3 | M | FUNCTION
+1    0    0    1    0   ADC
+0    1    1    0    0   SBC
+1    1    0    1    1   AND
+0    1    1    1    1   ORA
+0    1    1    0    1   XOR
+
+INPUTS:
+A0-A7 = ALU OUTPUTS
+E0 | E1 | SU | FUNCTION
+0    0    0    ADC
+0    0    1    SBC
+0    1    0    AND
+1    0    0    ORA
+1    1    0    XOR
+
+OUTPUTS:
+NO = NEGATIVE FLAG OUT
+ZO = ZERO FLAG OUT
+S0-S3 = '181 SELECT
+MS = '181 MODE SELECT

@@ -1,0 +1,37 @@
+GAL22V10
+shift
+
+A0 A1 A2 A3 A4 A5 A6 A7 SE SH LD GND
+NC NC NO RI LI CS ZO CO CI S1 S0 VCC
+
+S0 = LD + SE * SH
+
+S1 = LD + SE * /SH
+
+CO = A0 * SE * SH + A7 * SE * /SH
+
+ZO = /A0 * /A1 * /A2 * /A3 * /A4 * /A5 * /A6 * /A7 * /SE
+   + /A0 * /A1 * /A2 * /A3 * /A4 * /A6 * /A6 *  SE * /SH * CI * CS
+   + /A0 * /A1 * /A2 * /A3 * /A4 * /A6 * /A6 *  SE * /SH * /CS
+   + /A1 * /A2 * /A3 * /A4 * /A6 * /A6 * /A7 *  SE * /SH * CI * CS
+   + /A1 * /A2 * /A3 * /A4 * /A6 * /A6 * /A7 *  SE * /SH * /CS
+
+LI = SE * /SH * CS * CI
+
+RI = SE * SH * CS * CI
+
+NO = A7
+
+
+DESCRIPTION
+
+A0 - A7 OUTPUT PINS
+LI/RI LEFT/RIGHT INTO SHIFT REGISTER
+LD - LOAD
+SE - SHIFT ENABLE
+SH - 0 LEFT 1 RIGHT
+CS - SHIFT WITH CARRY
+ZO - ZERO FLAG OUTPUT
+CO - CARRY FLAG OUTPUT
+CI - CARRY FLAG IN
+S0/S1 - SHIFT REGISTER SELECT

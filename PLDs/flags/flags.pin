@@ -1,0 +1,29 @@
+
+
+ Pin # | Name     | Pin Type
+-----------------------------
+   1   | SEC      | Clock/Input
+   2   | NC       | Input
+   3   | CI       | Input
+   4   | EN       | Input
+   5   | EZ       | Input
+   6   | EC       | Input
+   7   | IN       | Input
+   8   | IZ       | Input
+   9   | AN       | Input
+  10   | AZ       | Input
+  11   | AC       | Input
+  12   | GND      | GND
+  13   | ARI      | Input
+  14   | SE       | Input
+  15   | IRI      | Input
+  16   | INE      | Input
+  17   | EO       | Input
+  18   | NC       | NC
+  19   | NC       | NC
+  20   | CB       | Output
+  21   | NO       | Output
+  22   | ZO       | Output
+  23   | CO       | Output
+  24   | VCC      | VCC
+

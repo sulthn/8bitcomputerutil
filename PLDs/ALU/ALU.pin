@@ -1,0 +1,25 @@
+
+
+ Pin # | Name     | Pin Type
+-----------------------------
+   1   | F0       | Input
+   2   | F1       | Input
+   3   | F2       | Input
+   4   | F3       | Input
+   5   | F4       | Input
+   6   | F5       | Input
+   7   | F6       | Input
+   8   | F7       | Input
+   9   | E0       | Input
+  10   | GND      | GND
+  11   | E1       | Input
+  12   | SU       | Input
+  13   | NO       | Output
+  14   | ZO       | Output
+  15   | S3       | Output
+  16   | S2       | Output
+  17   | S1       | Output
+  18   | S0       | Output
+  19   | MS       | Output
+  20   | VCC      | VCC
+
