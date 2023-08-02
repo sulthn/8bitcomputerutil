@@ -49,7 +49,7 @@
 #define LDA_imm 0x05
 #define ADD_imm 0x09
 #define STA     0x04
-#define OUT_AR  0x0e
+#define OUT_AR  0x1e
 #define HLT 0x0f
 #define JMP 0x06
 #define JC  0x07
@@ -64,9 +64,9 @@ const int data[8] = {DATA0, DATA1, DATA2, DATA3, DATA4, DATA5, DATA6, DATA7};
 #define store_1 0xf1
 #define store_2 0xf0
 
-unsigned program[256] = {LDA_imm, 1, STA, store_1, LDA_imm, 0, STA, store_2, OUT_AR, LDA, store_1, ADD, store_2, STA, store_1, OUT_AR, LDA, store_2, ADD, store_1, JC, 0, JMP, 0x06};
-char programAddress = 0;
-char programLength = 23;
+unsigned char program[256] = {LDA_imm, 1, STA, store_1, LDA_imm, 0, STA, store_2, OUT_AR, LDA, store_1, ADD, store_2, STA, store_1, OUT_AR, LDA, store_2, ADD, store_1, JC, 0, JMP, 0x06};
+int programAddress = 0;
+int programLength = 23;
 
 //const char program[] = {LDA_imm, 1, ROL, JMP, 2};
 
@@ -119,13 +119,42 @@ unsigned char readAddr(int Address) {
   return dd;
 }
 
-String serialRead = "";
-void loop() {
-  serialRead = "";
-  if (Serial.available()) {
-    serialRead = Serial.readString();
-    Serial.print(serialRead);
+void substring(const char* input, char* output, int start, int stop) {
+  const char* startptr = input + start;
+  int length = stop - start;
+
+  strncpy(output, startptr, length);
+  output[length] = '\0';
+}
+
+char serialRead[1024] = {'\0'};
+void rx() {
+  int rxindex = 0;
+  char rxbyte;
+  bool incoming = true;
+
+  while (!Serial.available());
+  while (Serial.available() > 0 || incoming) {
+    while (!Serial.available());
+    rxbyte = Serial.read();
+    Serial.print(rxbyte);
+
+    if (rxbyte != '\n') {
+      serialRead[rxindex] = rxbyte;
+      rxindex++;
+    }
+    else {
+      serialRead[rxindex] = '\n';
+      incoming = false;
+      break;
+    }
   }
+}
+
+void loop() {
+  memset(serialRead, '\0', 1024);
+  Serial.print("\n> ");
+  rx();
 
 
   // PROGRAM
@@ -175,19 +204,28 @@ void loop() {
         return;
     }
 
-    if (serialRead.length() < 1 /*|| serialRead.indexOf(':') != 3*/) {
+    if (strlen(serialRead) < 1 /*|| serialRead.indexOf(':') != 3*/) {
       Serial.println("Invalid use of READ.");
     }
 
-    int middle = serialRead.indexOf(':');
-
-    char saddr[3] = {0};
-    serialRead.substring(1, middle).toCharArray(saddr, 3);
-    unsigned char start_addr = strtol(saddr, 0, 16);
+    int sep;
+    if (strchr(serialRead, ':') != NULL) {
+      sep = (strchr(serialRead, ':') - serialRead + 1);
+    }
+    else {
+      sep = strlen(serialRead) - 1;
+    }
     
-    serialRead.substring(middle + 1, serialRead.length() - 1).toCharArray(saddr, 3);
-    unsigned char end_addr = strtol(saddr, 0, 16);
-    if (middle == -1) end_addr = start_addr;
+    char saddr[3] = {0};
+    substring(serialRead, saddr, 1, sep);
+    unsigned char start_addr = strtol(saddr, 0, 16);
+    unsigned char end_addr = start_addr;
+    
+    if (strchr(serialRead, ':') != NULL) {
+      substring(serialRead, saddr, sep, strlen(serialRead) - 1);
+      end_addr = strtol(saddr, 0, 16);
+    }
+
     if (start_addr > 255 | end_addr > 255)
     {
       Serial.println("Invalid memory space (>0xFF)");
@@ -218,19 +256,12 @@ void loop() {
         return;
     }
 
-    if (serialRead.length() < 1 || serialRead.indexOf(':') == -1 || serialRead.indexOf(':') != 3) {
+    if (strlen(serialRead) < 1 || strchr(serialRead, ':') == NULL || (strchr(serialRead, ':') - serialRead) != 3) {
       Serial.println("Invalid use of WRITE.");
       return;
     }
 
-    int sep = serialRead.length() - 1;
-
-    for (int i = 1; i < serialRead.length(); i++)
-    {
-      if (serialRead[i] == ':') {
-        sep = i + 1;
-      }
-    }
+    int sep = strchr(serialRead, ':') - serialRead + 1;
 
     for (int i = 0; i < 8; i++) {
       pinMode(addr[i], OUTPUT);
@@ -242,31 +273,33 @@ void loop() {
       digitalWrite(data[i], LOW);
     }
 
-    char saddr[3] = {0};
-    serialRead.substring(1, sep).toCharArray(saddr, 3);
-
-    if (serialRead.substring(sep, serialRead.length() - 1).length() % 2) {
-      Serial.println("Invalid program length (odd)");
-      return;
-    }
-    Serial.println("Writing...");
-    int programLen = serialRead.substring(sep, serialRead.length() - 1).length()/2;
-
-    char byteToProgram[3] = { 0 };
-    memset(program, '\0', 256);
-
+    char saddr[3] = { '\0' };
+    substring(serialRead, saddr, 1, sep - 1);
+    
+    int programLen = ((strlen(serialRead) - sep + 1)/2) - 1;
     int start_addr = strtol(saddr, 0, 16);
 
-    programAddress = start_addr;
-    programLength = programLen - 1;
+    if (programLen > 256 || (programLen + start_addr) > 256) {
+      Serial.println("Invalid program size >0xFF");
+      return;
+    }
 
-    for (int i = start_addr; i < programLen + start_addr; i++) {
+    Serial.println("Writing...");
+    
+    memset(program, '\0', 256);
+    programAddress = start_addr;
+    programLength = programLen;
+
+    char byteToProgram[3] = { '\0' };
+
+    for (int i = start_addr; i < (programLen + start_addr); i++) {
       for (int z = 0; z < 8; z++) {
         digitalWrite(addr[z], (i >> z) & 0x1);
       }
 
-      serialRead.substring(sep + (i - start_addr) * 2, sep + 2 + (i - start_addr) * 2).toCharArray(byteToProgram, 3);
+      substring(serialRead, byteToProgram, sep + (i - start_addr) * 2, (sep + (i - start_addr) * 2) + 2);
       unsigned char byteSend = strtol(byteToProgram, 0, 16);
+
       program[i - start_addr] = byteSend;
       for (int y = 0; y < 8; y++) {
         digitalWrite(data[y], (byteSend >> y) & 0x1);
@@ -274,12 +307,13 @@ void loop() {
       digitalWrite(EXE, HIGH);
       delay(10);
       digitalWrite(EXE, LOW);
+      
     }
     resetPins();
     
-    int addressSpace = programLen - 1;
+    int addressSpace = programLen;
     
-    for (int h = 0; h <= addressSpace; h++) {
+    for (int h = 0; h < addressSpace; h++) {
       if (!(h % 16)) {
         Serial.println("");
         Serial.print((start_addr + h) < 16 ? "0" : "");
@@ -299,7 +333,7 @@ void loop() {
 
     int addressSpace = programLength;
     
-    for (int h = 0; h <= addressSpace; h++) {
+    for (int h = 0; h < addressSpace; h++) {
       if (!(h % 16)) {
         Serial.println("");
         Serial.print((programAddress + h) < 16 ? "0" : "");
@@ -310,9 +344,6 @@ void loop() {
       Serial.print(program[h], HEX);
       Serial.print(" ");
     }
-    Serial.println("");
+    Serial.println("\nBuffer read.");
   }
-
-
-  //Serial.print("\n> ");
 }
